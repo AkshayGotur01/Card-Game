@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Card Table — Scorekeeper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.0/babel.min.js"></script>
+<style>
+:root{
+  --felt-1:#0f3d2e; --felt-2:#134a37; --gold:#d4af6a; --gold-soft:#e9d19f;
+  --ink:#eef3ee; --ink-dim:#a9c2b4; --card:#123a2c; --card-brd:#1e5a44;
+  --danger:#e2685b; --warn:#e0a83e; --ok:#4caf7d; --muted:#5a6f65;
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+  --r:18px;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+:root:not([data-theme="light"]){ }
+:root[data-theme="light"]{
+  --felt-1:#f4efe4; --felt-2:#ece3d0; --gold:#a97b2f; --gold-soft:#c99a4a;
+  --ink:#20281f; --ink-dim:#5a6a58; --card:#fffdf7; --card-brd:#e2d7bd;
+  --danger:#c14a3d; --warn:#b5791e; --ok:#2f8f5b; --muted:#8a8776;
+  --shadow: 0 10px 26px rgba(60,50,20,.12);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:
+  radial-gradient(1200px 800px at 20% -10%, var(--felt-2), var(--felt-1) 60%);
+  color:var(--ink); min-height:100%; -webkit-font-smoothing:antialiased;}
+h1,h2,h3,.disp{font-family:Fraunces,Georgia,serif}
+.wrap{max-width:980px;margin:0 auto;padding:24px 18px 60px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:10px;font-family:Fraunces;font-weight:600;font-size:1.2rem;color:var(--gold-soft)}
+.brand .suit{font-size:1.4rem}
+.iconbtn{background:transparent;border:1px solid var(--card-brd);color:var(--ink);border-radius:12px;padding:9px 13px;cursor:pointer;font-size:.85rem;font-weight:600;transition:.15s}
+.iconbtn:hover{background:var(--card)}
+.menu{position:relative}
+.menu-pop{position:absolute;right:0;top:calc(100% + 8px);background:var(--card);border:1px solid var(--card-brd);border-radius:14px;box-shadow:var(--shadow);min-width:200px;overflow:hidden;z-index:40}
+.menu-pop button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--ink);padding:12px 16px;font-size:.9rem;cursor:pointer;border-bottom:1px solid var(--card-brd)}
+.menu-pop button:last-child{border-bottom:none}
+.menu-pop button:hover{background:var(--felt-2)}
+.panel{background:var(--card);border:1px solid var(--card-brd);border-radius:var(--r);box-shadow:var(--shadow);padding:22px}
+.center{display:flex;align-items:center;justify-content:center;min-height:70vh}
+.setup{max-width:520px;width:100%}
+.field{margin-bottom:16px}
+label{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-dim);margin-bottom:6px;font-weight:600}
+input[type=text],input[type=number]{width:100%;background:var(--felt-1);border:1px solid var(--card-brd);color:var(--ink);border-radius:10px;padding:11px 12px;font-size:1rem;font-family:inherit}
+input:focus{outline:2px solid var(--gold);outline-offset:1px}
+.playerRow{display:flex;gap:8px;margin-bottom:8px}
+.playerRow input{flex:1}
+.xbtn{background:transparent;border:1px solid var(--card-brd);color:var(--danger);border-radius:10px;width:40px;cursor:pointer;font-size:1rem}
+.addbtn{width:100%;background:transparent;border:1.5px dashed var(--card-brd);color:var(--gold-soft);border-radius:10px;padding:10px;cursor:pointer;font-weight:600;margin-top:4px}
+.cta{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-soft));color:#1c1305;border:none;border-radius:12px;padding:14px;font-size:1.02rem;font-weight:700;cursor:pointer;margin-top:8px;letter-spacing:.02em;box-shadow:0 6px 18px rgba(212,175,106,.25)}
+.cta:disabled{opacity:.4;cursor:not-allowed}
+.err{color:var(--danger);font-size:.82rem;margin-top:4px}
+.hero{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:20px}
+.stat{text-align:left}
+.stat .n{font-family:Fraunces;font-size:1.5rem;font-weight:600}
+.stat .l{font-size:.72rem;text-transform:uppercase;color:var(--ink-dim);letter-spacing:.05em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-bottom:22px}
+.pcard{background:var(--card);border:1px solid var(--card-brd);border-radius:var(--r);padding:16px;position:relative;transition:transform .35s ease,box-shadow .35s ease}
+.pcard.leader{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 12px 28px rgba(212,175,106,.18)}
+.pcard.out{opacity:.55;filter:grayscale(.4)}
+.prank{font-size:1.3rem}
+.pname{font-family:Fraunces;font-weight:600;font-size:1.05rem;margin:6px 0 2px}
+.pscore{font-size:2rem;font-weight:700;font-family:Fraunces}
+.pbar{height:8px;border-radius:5px;background:var(--felt-1);overflow:hidden;margin:10px 0 8px}
+.pbar>div{height:100%;border-radius:5px;transition:width .5s ease}
+.prow{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;color:var(--ink-dim)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:20px}
+.pill.ok{background:rgba(76,175,125,.15);color:var(--ok)}
+.pill.warn{background:rgba(224,168,62,.15);color:var(--warn)}
+.pill.danger{background:rgba(226,104,91,.18);color:var(--danger)}
+.pill.out{background:rgba(120,120,120,.18);color:var(--muted)}
+.section-title{font-family:Fraunces;font-size:1.15rem;margin:26px 0 12px;color:var(--gold-soft)}
+.callouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:22px}
+.callout{background:var(--card);border:1px solid var(--card-brd);border-radius:14px;padding:14px 16px}
+.callout .lbl{font-size:.72rem;text-transform:uppercase;color:var(--ink-dim);letter-spacing:.05em;margin-bottom:4px}
+.callout .val{font-family:Fraunces;font-size:1.15rem}
+.entryRow{display:grid;grid-template-columns:1fr 110px;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--card-brd)}
+.entryRow:last-of-type{border-bottom:none}
+.lb{background:none;border:none;color:var(--ink);cursor:pointer;font-family:inherit;font-size:.95rem;width:100%;text-align:left;padding:8px 0}
+.lbTitle{display:flex;justify-content:space-between;align-items:center}
+.lbBody{padding:0 0 8px}
+.roundEntry{background:var(--felt-1);border:1px solid var(--card-brd);border-radius:6px;padding:8px 10px;margin:2px 0;display:flex;justify-content:space-between;font-size:.85rem;color:var(--ink-dim)}
+.overlay{position:fixed;inset:0;background:rgba(6,14,10,.65);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:100}
+.modal{background:var(--card);border:1px solid var(--card-brd);border-radius:20px;padding:26px;max-width:440px;width:100%;box-shadow:var(--shadow)}
+.modal h3{margin:0 0 10px;font-family:Fraunces}
+.modal p{color:var(--ink-dim);font-size:.92rem;line-height:1.5}
+.modalBtns{display:flex;gap:10px;margin-top:18px}
+.btn2{flex:1;padding:11px;border-radius:10px;border:1px solid var(--card-brd);background:transparent;color:var(--ink);cursor:pointer;font-weight:600}
+.btn2.danger{background:var(--danger);border:none;color:#fff}
+.summaryTbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:.88rem}
+.summaryTbl th{text-align:left;color:var(--ink-dim);font-weight:600;font-size:.72rem;text-transform:uppercase;padding-bottom:6px}
+.summaryTbl td{padding:7px 0;border-top:1px solid var(--card-brd)}
+.winnerModal{text-align:center;max-width:460px}
+.winnerModal .trophy{font-size:3.2rem;margin-bottom:6px}
+.winnerModal h1{font-family:Fraunces;font-size:2.1rem;margin:4px 0;color:var(--gold)}
+.ctrlrow{display:flex;gap:10px;flex-wrap:wrap}
+.ctrlrow .cta{width:auto;flex:1}
+@media(max-width:560px){ .hero{gap:10px} .grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const {useState,useMemo,useEffect,useRef} = React;
+const RANK_ICON = ["🥇","🥈","🥉"];
+const uid = () => Math.random().toString(36).slice(2,9);
+
+function statusFor(score,max){
+  if(score>=max) return "out";
+  const pct = score/max;
+  if(pct>=0.9) return "critical";
+  if(pct>=0.75) return "danger";
+  if(pct>=0.5) return "warn";
+  return "ok";
+}
+const STATUS_META = {
+  ok:{label:"Comfortable",color:"var(--ok)",pill:"ok"},
+  warn:{label:"Getting close",color:"var(--warn)",pill:"warn"},
+  danger:{label:"Danger",color:"var(--danger)",pill:"danger"},
+  critical:{label:"Critical",color:"var(--danger)",pill:"danger"},
+  out:{label:"OUT",color:"var(--muted)",pill:"out"},
+};
+
+function Confirm({title,body,confirmLabel,onCancel,onConfirm,danger}){
+  return (
+    <div className="overlay" onClick={onCancel}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <h3>{title}</h3>
+        <p>{body}</p>
+        <div className="modalBtns">
+          <button className="btn2" onClick={onCancel}>Cancel</button>
+          <button className={"btn2"+(danger?" danger":"")} onClick={onConfirm}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Setup({onStart}){
+  const [name,setName] = useState("");
+  const [players,setPlayers] = useState(["","",""]);
+  const [max,setMax] = useState(250);
+  const [error,setError] = useState("");
+
+  const update = (i,v) => { const n=[...players]; n[i]=v; setPlayers(n); };
+  const remove = i => setPlayers(players.filter((_,idx)=>idx!==i));
+  const add = () => setPlayers([...players,""]);
+
+  const start = () => {
+    const names = players.map(p=>p.trim()).filter(Boolean);
+    if(names.length<2){ setError("Add at least 2 players."); return; }
+    const lower = names.map(n=>n.toLowerCase());
+    if(new Set(lower).size!==lower.length){ setError("Player names must be unique."); return; }
+    if(!max || max<=0){ setError("Enter a valid elimination limit."); return; }
+    setError("");
+    onStart({
+      name: name.trim() || "Card Game",
+      maxPoints: Number(max),
+      players: names.map(n=>({id:uid(),name:n,total:0,status:"ok"})),
+    });
+  };
+
+  return (
+    <div className="center">
+      <div className="panel setup">
+        <h1 className="disp" style={{marginTop:0,color:"var(--gold-soft)"}}>♠ New Game</h1>
+        <div className="field">
+          <label>Game name (optional)</label>
+          <input type="text" placeholder="Sunday Card Game" value={name} onChange={e=>setName(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Players</label>
+          {players.map((p,i)=>(
+            <div className="playerRow" key={i}>
+              <input type="text" placeholder={"Player "+(i+1)} value={p} onChange={e=>update(i,e.target.value)} />
+              {players.length>2 && <button className="xbtn" onClick={()=>remove(i)}>✕</button>}
+            </div>
+          ))}
+          <button className="addbtn" onClick={add}>+ Add player</button>
+        </div>
+        <div className="field">
+          <label>Maximum points</label>
+          <input type="number" min="1" value={max} onChange={e=>setMax(e.target.value)} />
+          <div style={{fontSize:".78rem",color:"var(--ink-dim)",marginTop:"6px"}}>Players reaching this score or higher are eliminated.</div>
+        </div>
+        {error && <div className="err">{error}</div>}
+        <button className="cta" onClick={start}>Start Game</button>
+      </div>
+    </div>
+  );
+}
+
+function PlayerCard({p, idx, leaderScore, max}){
+  const st = statusFor(p.total, max);
+  const meta = STATUS_META[p.status==="out" ? "out" : st];
+  const pct = Math.min(100,(p.total/max)*100);
+  const diff = p.status==="out" ? null : p.total - leaderScore;
+  return (
+    <div className={"pcard"+(diff===0 && p.status!=="out" ? " leader":"")+(p.status==="out"?" out":"")}>
+      <div className="prank">{p.status==="out" ? "❌" : (idx<3 ? RANK_ICON[idx] : (idx+1)+"️⃣")}</div>
+      <div className="pname">{p.name}</div>
+      <div className="pscore">{p.total} <span style={{fontSize:"1rem",color:"var(--ink-dim)",fontFamily:"Inter"}}>pts</span></div>
+      <div className="pbar"><div style={{width:pct+"%",background:meta.color}}></div></div>
+      <div className="prow">
+        <span>{p.total}/{max}</span>
+        <span className={"pill "+meta.pill}>{p.status==="out" ? "OUT" : meta.label}</span>
+      </div>
+      {p.status!=="out" && <div className="prow" style={{marginTop:"6px"}}>{diff===0 ? "Leader" : "+"+diff+" from leader"}</div>}
+    </div>
+  );
+}
+
+function App(){
+  const [game,setGame] = useState(null);
+  const [scores,setScores] = useState({});
+  const [confirm,setConfirm] = useState(null);
+  const [menuOpen,setMenuOpen] = useState(false);
+  const [roundSummary,setRoundSummary] = useState(null);
+  const [showRules,setShowRules] = useState(false);
+  const [editingRound,setEditingRound] = useState(null);
+  const [expandedRounds,setExpandedRounds] = useState({});
+  const [theme,setTheme] = useState("dark");
+  const menuRef = useRef(null);
+
+  useEffect(()=>{
+    document.documentElement.setAttribute("data-theme",theme);
+  },[theme]);
+
+  useEffect(()=>{
+    const h = e => { if(menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false); };
+    document.addEventListener("mousedown",h);
+    return ()=>document.removeEventListener("mousedown",h);
+  },[]);
+
+  const activePlayers = game ? game.players.filter(p=>p.status!=="out") : [];
+  const outPlayers = game ? game.players.filter(p=>p.status==="out") : [];
+  const leaderScore = activePlayers.length ? Math.min(...activePlayers.map(p=>p.total)) : 0;
+  const sortedActive = useMemo(()=> activePlayers.slice().sort((a,b)=>a.total-b.total), [game]);
+  const winner = game && activePlayers.length===1 ? activePlayers[0] : null;
+  const gameOver = !!winner || (game && activePlayers.length===0);
+
+  const closest = activePlayers.length ? activePlayers.slice().sort((a,b)=>b.total-a.total)[0] : null;
+
+  const startGame = cfg => {
+    setGame({...cfg, round:0, history:[]});
+    setScores({});
+  };
+
+  const onScoreChange = (id,v) => setScores({...scores, [id]:v});
+
+  const canSubmit = activePlayers.every(p => scores[p.id]!==undefined && scores[p.id]!=="" && Number(scores[p.id])>=0);
+
+  const recomputeFromHistory = (players, history) => {
+    let totals = {}; players.forEach(p=>totals[p.id]=0);
+    let statusMap = {}; players.forEach(p=>statusMap[p.id]="ok");
+    history.forEach(rnd => {
+      Object.entries(rnd.scores).forEach(([pid,pts])=>{
+        if(statusMap[pid]!=="out"){
+          totals[pid]+=Number(pts);
+          if(totals[pid]>=game.maxPoints) statusMap[pid]="out";
+        }
+      });
+    });
+    return players.map(p=>({...p,total:totals[p.id],status:statusMap[p.id]}));
+  };
+
+  const submitRound = () => {
+    const roundScores = {};
+    activePlayers.forEach(p=>{ roundScores[p.id]=Number(scores[p.id]); });
+    const newHistory = [...game.history, {roundNumber:game.round+1, scores:roundScores}];
+    const newPlayers = recomputeFromHistory(game.players, newHistory);
+    const eliminated = newPlayers.filter(p=>p.status==="out" && !game.players.find(op=>op.id===p.id && op.status==="out"));
+    const rows = activePlayers.map(p=>{
+      const np = newPlayers.find(x=>x.id===p.id);
+      return {name:p.name, added:roundScores[p.id], prev:p.total, next:np.total, status:np.status};
+    });
+    setGame({...game, players:newPlayers, round:game.round+1, history:newHistory});
+    setRoundSummary({roundNumber:game.round+1, rows, eliminated: eliminated.map(e=>({name:e.name,total:e.total}))});
+    setScores({});
+  };
+
+  const doUndo = () => {
+    const newHistory = game.history.slice(0,-1);
+    const newPlayers = recomputeFromHistory(game.players, newHistory);
+    setGame({...game, players:newPlayers, round:game.round-1, history:newHistory});
+    setConfirm(null);
+  };
+
+  const applyEdit = (roundNumber, newScores) => {
+    const newHistory = game.history.map(r => r.roundNumber===roundNumber ? {...r, scores:newScores} : r);
+    const newPlayers = recomputeFromHistory(game.players, newHistory);
+    setGame({...game, players:newPlayers, history:newHistory});
+    setEditingRound(null);
+  };
+
+  const resetGame = () => { setGame(null); setConfirm(null); setMenuOpen(false); setRoundSummary(null); };
+
+  if(!game) return <Setup onStart={startGame} />;
+
+  return (
+    <div className="wrap">
+      <div className="bar">
+        <div className="brand"><span className="suit">♠</span>{game.name}</div>
+        <div className="ctrlrow" style={{gap:"8px"}}>
+          <button className="iconbtn" onClick={()=>setTheme(t=>t==="dark"?"light":"dark")}>{theme==="dark"?"☀️ Light":"🌙 Dark"}</button>
+          <div className="menu" ref={menuRef}>
+            <button className="iconbtn" onClick={()=>setMenuOpen(o=>!o)}>☰ Menu</button>
+            {menuOpen && (
+              <div className="menu-pop">
+                <button onClick={()=>{setConfirm({type:"newgame"}); setMenuOpen(false);}}>New Game</button>
+                <button disabled={!game.history.length} onClick={()=>{setConfirm({type:"undo"}); setMenuOpen(false);}}>Undo Last Round</button>
+                <button onClick={()=>{setShowRules(true); setMenuOpen(false);}}>Game Rules</button>
+                <button onClick={()=>{setConfirm({type:"reset"}); setMenuOpen(false);}}>Reset Game</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="hero">
+        <div className="stat"><div className="n">Round {game.round}</div><div className="l">Current round</div></div>
+        <div className="stat"><div className="n">{activePlayers.length}</div><div className="l">Players remaining</div></div>
+        <div className="stat"><div className="n">{game.maxPoints}</div><div className="l">Elimination limit</div></div>
+      </div>
+
+      {!gameOver && activePlayers.length>0 && (
+        <div className="callouts">
+          <div className="callout"><div className="lbl">🏆 Current leader</div><div className="val">{sortedActive[0].name} — {sortedActive[0].total}</div></div>
+          {closest && <div className="callout"><div className="lbl">⚠️ Closest to elimination</div><div className="val">{closest.name} — {game.maxPoints-closest.total} pts left</div></div>}
+        </div>
+      )}
+
+      <div className="section-title">Scoreboard</div>
+      <div className="grid">
+        {sortedActive.map((p,i)=><PlayerCard key={p.id} p={p} idx={i} leaderScore={leaderScore} max={game.maxPoints} />)}
+      </div>
+
+      {outPlayers.length>0 && (
+        <>
+          <div className="section-title">Eliminated Players</div>
+          <div className="grid">
+            {outPlayers.slice().sort((a,b)=>a.total-b.total).map((p,i)=>
+              <PlayerCard key={p.id} p={p} idx={i} leaderScore={leaderScore} max={game.maxPoints} />)}
+          </div>
+        </>
+      )}
+
+      {!gameOver && (
+        <div className="panel" style={{marginTop:"6px"}}>
+          <h3 style={{marginTop:0}}>Enter Round {game.round+1} Scores</h3>
+          {activePlayers.map(p=>(
+            <div className="entryRow" key={p.id}>
+              <div>{p.name}</div>
+              <input type="number" min="0" placeholder="0" value={scores[p.id]??""} onChange={e=>onScoreChange(p.id,e.target.value)} />
+            </div>
+          ))}
+          <button className="cta" disabled={!canSubmit} onClick={submitRound}>Submit Round</button>
+        </div>
+      )}
+
+      {game.history.length>0 && (
+        <div className="panel" style={{marginTop:"18px"}}>
+          <h3 style={{marginTop:0}}>Round History</h3>
+          {game.history.slice().reverse().map(r=>(
+            <div key={r.roundNumber}>
+              <button className="lb" onClick={()=>setExpandedRounds(e=>({...e,[r.roundNumber]:!e[r.roundNumber]}))}>
+                <div className="lbTitle">
+                  <span>Round {r.roundNumber}</span>
+                  <span style={{display:"flex",gap:"10px",alignItems:"center"}}>
+                    {r.roundNumber===game.round && <span style={{color:"var(--gold-soft)",fontSize:".82rem"}} onClick={(e)=>{e.stopPropagation(); setEditingRound(r);}}>✏️ Correct</span>}
+                    <span>{expandedRounds[r.roundNumber]?"▲":"▼"}</span>
+                  </span>
+                </div>
+              </button>
+              {expandedRounds[r.roundNumber] && (
+                <div className="lbBody">
+                  {game.players.filter(p=>r.scores[p.id]!==undefined).map(p=>
+                    <div className="roundEntry" key={p.id}><span>{p.name}</span><span>+{r.scores[p.id]}</span></div>)}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="panel" style={{marginTop:"18px"}}>
+        <h3 style={{marginTop:0}}>Live Leaderboard</h3>
+        <table className="summaryTbl">
+          <thead><tr><th>Rank</th><th>Player</th><th>Score</th><th>Diff</th></tr></thead>
+          <tbody>
+            {sortedActive.map((p,i)=>(
+              <tr key={p.id}><td>{i<3?RANK_ICON[i]:i+1}</td><td>{p.name}</td><td>{p.total}</td><td>{p.total-leaderScore===0?"Leader":"+"+(p.total-leaderScore)}</td></tr>
+            ))}
+            {outPlayers.map(p=><tr key={p.id} style={{color:"var(--muted)"}}><td>❌</td><td>{p.name}</td><td>{p.total}</td><td>OUT</td></tr>)}
+          </tbody>
+        </table>
+      </div>
+
+      {roundSummary && !winner && (
+        <div className="overlay" onClick={()=>setRoundSummary(null)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <h3>Round {roundSummary.roundNumber} Complete</h3>
+            <table className="summaryTbl">
+              <thead><tr><th>Player</th><th>+Pts</th><th>Total</th><th>Status</th></tr></thead>
+              <tbody>
+                {roundSummary.rows.map(r=>(
+                  <tr key={r.name}><td>{r.name}</td><td>+{r.added}</td><td>{r.prev} → {r.next}</td><td>{r.status==="out"?"OUT":"ACTIVE"}</td></tr>
+                ))}
+              </tbody>
+            </table>
+            {roundSummary.eliminated.length>0 && (
+              <div style={{marginTop:"10px",padding:"12px",background:"rgba(226,104,91,.12)",borderRadius:"12px"}}>
+                🚨 <strong>{roundSummary.eliminated.map(e=>e.name).join(", ")}</strong> reached the {game.maxPoints} point limit.
+              </div>
+            )}
+            <button className="cta" onClick={()=>setRoundSummary(null)}>Continue</button>
+          </div>
+        </div>
+      )}
+
+      {winner && (
+        <div className="overlay">
+          <div className="modal winnerModal">
+            <div className="trophy">🎉🏆🎉</div>
+            <div style={{color:"var(--ink-dim)",fontSize:".85rem",letterSpacing:".05em"}}>LAST PLAYER STANDING</div>
+            <h1>{winner.name}</h1>
+            <p>Final score: {winner.total}</p>
+            <table className="summaryTbl" style={{textAlign:"left"}}>
+              <tbody>
+                {game.players.slice().sort((a,b)=> (a.id===winner.id? -1 : b.id===winner.id?1: a.total-b.total)).map((p,i)=>(
+                  <tr key={p.id}><td>{p.id===winner.id?"🏆":"❌"}</td><td>{p.name}</td><td>{p.total}</td><td>{p.id===winner.id?"WINNER":"OUT"}</td></tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{fontSize:".8rem",color:"var(--ink-dim)",margin:"6px 0 4px"}}>
+              {game.round} rounds played · {game.players.length} players started
+            </div>
+            <div className="ctrlrow">
+              <button className="cta" onClick={()=>setConfirm({type:"newgame"})}>New Game</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRules && (
+        <div className="overlay" onClick={()=>setShowRules(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <h3>Card Game Rules</h3>
+            <ul style={{color:"var(--ink-dim)",fontSize:".9rem",lineHeight:1.7,paddingLeft:"18px"}}>
+              <li>Lowest score is best.</li>
+              <li>Points are added after every round.</li>
+              <li>A player reaching or exceeding {game.maxPoints} is OUT.</li>
+              <li>OUT players receive no points in future rounds.</li>
+              <li>The game continues until one active player remains.</li>
+              <li>The last active player is the winner.</li>
+              <li>Scores exist only for this browser session.</li>
+            </ul>
+            <button className="btn2" onClick={()=>setShowRules(false)} style={{width:"100%"}}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {editingRound && (
+        <EditRoundModal round={editingRound} players={game.players.filter(p=>editingRound.scores[p.id]!==undefined)}
+          onCancel={()=>setEditingRound(null)} onSave={vals=>applyEdit(editingRound.roundNumber, vals)} />
+      )}
+
+      {confirm?.type==="reset" && <Confirm title="Reset Game?" body="This will erase all current scores and round history. This action cannot be undone." confirmLabel="Reset Game" danger onCancel={()=>setConfirm(null)} onConfirm={resetGame} />}
+      {confirm?.type==="newgame" && <Confirm title="Start a New Game?" body="This will leave the current game and its scores behind." confirmLabel="New Game" danger onCancel={()=>setConfirm(null)} onConfirm={resetGame} />}
+      {confirm?.type==="undo" && <Confirm title="Undo last round?" body={"This will remove the points from Round "+game.round+" and restore the previous scores."} confirmLabel="Undo" danger onCancel={()=>setConfirm(null)} onConfirm={doUndo} />}
+    </div>
+  );
+}
+
+function EditRoundModal({round,players,onCancel,onSave}){
+  const [vals,setVals] = useState({...round.scores});
+  const [confirming,setConfirming] = useState(false);
+  return (
+    <div className="overlay" onClick={onCancel}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        {!confirming ? (
+          <>
+            <h3>Correct Round {round.roundNumber}</h3>
+            {players.map(p=>(
+              <div className="entryRow" key={p.id}>
+                <div>{p.name}</div>
+                <input type="number" min="0" value={vals[p.id]} onChange={e=>setVals({...vals,[p.id]:e.target.value})} />
+              </div>
+            ))}
+            <div className="modalBtns">
+              <button className="btn2" onClick={onCancel}>Cancel</button>
+              <button className="btn2 danger" onClick={()=>setConfirming(true)}>Save</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h3>Update previous round?</h3>
+            <p>This will recalculate all scores after Round {round.roundNumber}.</p>
+            <div className="modalBtns">
+              <button className="btn2" onClick={()=>setConfirming(false)}>Back</button>
+              <button className="btn2 danger" onClick={()=>onSave(vals)}>Confirm</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
