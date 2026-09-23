@@ -234,6 +234,18 @@ function App(){
   },[theme]);
 
   useEffect(()=>{
+    const active = game && !(game.players.filter(p=>p.status!=="out").length<=1);
+    const handler = e => {
+      if(!active) return;
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return ()=>window.removeEventListener("beforeunload", handler);
+  },[game]);
+
+  useEffect(()=>{
     const h = e => { if(menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false); };
     document.addEventListener("mousedown",h);
     return ()=>document.removeEventListener("mousedown",h);
